@@ -13,6 +13,7 @@ class AppState: ObservableObject {
     @Published var status: AppStatus = .loading
     @Published var isRecording: Bool = false
     @Published var errorMessage: String?
+    @AppStorage("cleanupEnabled") var cleanupEnabled: Bool = true
 
     let modelManager = ModelManager()
     let audioRecorder = AudioRecorder()
@@ -21,6 +22,8 @@ class AppState: ObservableObject {
     let soundEffects = SoundEffects()
     let hotkeyMonitor = HotkeyMonitor()
     let overlay = RecordingOverlayController()
+    let textCleanupManager = TextCleanupManager()
+    let textCleaner: TextCleaner
 
     var isReady: Bool {
         status == .ready
@@ -28,6 +31,7 @@ class AppState: ObservableObject {
 
     init() {
         self.transcriber = WhisperTranscriber(modelManager: modelManager)
+        self.textCleaner = TextCleaner(cleanupManager: textCleanupManager)
     }
 
     func initialize() async {
@@ -51,11 +55,17 @@ class AppState: ObservableObject {
 
         // Now try to start the hotkey monitor (needs Accessibility)
         await startHotkeyMonitor()
+
+        // Load cleanup model in background (don't block Ready state)
+        if cleanupEnabled {
+            Task {
+                await textCleanupManager.loadModel()
+            }
+        }
     }
 
     /// Attempts to start the hotkey monitor. Can be called again after granting Accessibility permission.
     func startHotkeyMonitor() async {
-        // Set up hotkey callbacks
         hotkeyMonitor.onRecordingStart = { [weak self] in
             Task { @MainActor in
                 self?.startRecording()
@@ -71,7 +81,6 @@ class AppState: ObservableObject {
             status = .ready
             errorMessage = nil
         } else {
-            // CGEvent tap failed — likely missing Accessibility permission
             PermissionChecker.promptAccessibility()
             errorMessage = "Accessibility access required — grant permission then click Retry"
             status = .error
@@ -103,7 +112,13 @@ class AppState: ObservableObject {
         status = .transcribing
 
         if let text = await transcriber.transcribe(audioBuffer: buffer) {
-            textPaster.paste(text: text)
+            let finalText: String
+            if cleanupEnabled && textCleanupManager.isReady {
+                finalText = await textCleaner.clean(text: text)
+            } else {
+                finalText = text
+            }
+            textPaster.paste(text: finalText)
         }
 
         status = .ready

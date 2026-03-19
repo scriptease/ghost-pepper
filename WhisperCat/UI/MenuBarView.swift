@@ -46,6 +46,41 @@ struct MenuBarView: View {
 
             Divider()
 
+            Picker("Cleanup", selection: $appState.cleanupEnabled) {
+                Text("Off").tag(false)
+                Text("On").tag(true)
+            }
+            .onChange(of: appState.cleanupEnabled) { _, enabled in
+                Task {
+                    if enabled {
+                        await appState.textCleanupManager.loadModel()
+                    } else {
+                        appState.textCleanupManager.unloadModel()
+                    }
+                }
+            }
+
+            if appState.cleanupEnabled {
+                switch appState.textCleanupManager.state {
+                case .loading:
+                    Text("Loading cleanup model...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                case .error:
+                    Text(appState.textCleanupManager.errorMessage ?? "Cleanup model error")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                case .ready:
+                    Text("Cleanup ready")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                case .idle:
+                    EmptyView()
+                }
+            }
+
+            Divider()
+
             Button("Restart WhisperCat") {
                 restartApp()
             }
