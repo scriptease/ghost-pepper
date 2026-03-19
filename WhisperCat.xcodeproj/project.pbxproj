@@ -19,6 +19,8 @@
 		AA4444444444444444444444 /* AudioRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2222222222222222222222 /* AudioRecorderTests.swift */; };
 		BB1111111111111111111111 /* HotkeyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2222222222222222222222 /* HotkeyMonitor.swift */; };
 		BB3333333333333333333333 /* HotkeyMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4444444444444444444444 /* HotkeyMonitorTests.swift */; };
+		CC3333333333333333333333 /* TextPaster.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1111111111111111111111 /* TextPaster.swift */; };
+		CC4444444444444444444444 /* TextPasterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2222222222222222222222 /* TextPasterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +49,8 @@
 		AA2222222222222222222222 /* AudioRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderTests.swift; sourceTree = "<group>"; };
 		BB2222222222222222222222 /* HotkeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyMonitor.swift; sourceTree = "<group>"; };
 		BB4444444444444444444444 /* HotkeyMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyMonitorTests.swift; sourceTree = "<group>"; };
+		CC1111111111111111111111 /* TextPaster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPaster.swift; sourceTree = "<group>"; };
+		CC2222222222222222222222 /* TextPasterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextPasterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +86,7 @@
 			isa = PBXGroup;
 			children = (
 				BB2222222222222222222222 /* HotkeyMonitor.swift */,
+				CC1111111111111111111111 /* TextPaster.swift */,
 			);
 			path = Input;
 			sourceTree = "<group>";
@@ -124,6 +129,7 @@
 			children = (
 				AA2222222222222222222222 /* AudioRecorderTests.swift */,
 				BB4444444444444444444444 /* HotkeyMonitorTests.swift */,
+				CC2222222222222222222222 /* TextPasterTests.swift */,
 				C6448B6A94297E00FBE83DFF /* WhisperCatTests.swift */,
 				2982CD3A002B866B0EFF8F0E /* WhisperTranscriberTests.swift */,
 			);
@@ -217,6 +223,7 @@
 			files = (
 				AA4444444444444444444444 /* AudioRecorderTests.swift in Sources */,
 				BB3333333333333333333333 /* HotkeyMonitorTests.swift in Sources */,
+				CC4444444444444444444444 /* TextPasterTests.swift in Sources */,
 				D1CC1FC4E9069619C2D1A99E /* WhisperCatTests.swift in Sources */,
 				159DC21395BBE127DCE45CBE /* WhisperTranscriberTests.swift in Sources */,
 			);
@@ -229,6 +236,7 @@
 				2836F391A17A7520A05DF5EE /* AppState.swift in Sources */,
 				AA3333333333333333333333 /* AudioRecorder.swift in Sources */,
 				BB1111111111111111111111 /* HotkeyMonitor.swift in Sources */,
+				CC3333333333333333333333 /* TextPaster.swift in Sources */,
 				8CBD27433A339C8523112A74 /* MenuBarView.swift in Sources */,
 				BFC328A5EC5C27190383C083 /* ModelManager.swift in Sources */,
 				58DF2F200630FFB7E2F2C6D9 /* WhisperCatApp.swift in Sources */,
