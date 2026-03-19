@@ -22,7 +22,10 @@ targets:
         CODE_SIGN_ENTITLEMENTS: WhisperCat/WhisperCat.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: com.whispercat.app
         ENABLE_APP_SANDBOX: NO
-        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_HARDENED_RUNTIME: NO
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: BBVMGXR9AY
     dependencies:
       - package: WhisperKit
     entitlements:

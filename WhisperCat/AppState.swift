@@ -39,15 +39,7 @@ class AppState: ObservableObject {
             return
         }
 
-        // Check accessibility permission
-        if !PermissionChecker.checkAccessibility() {
-            PermissionChecker.promptAccessibility()
-            errorMessage = "Accessibility access required — grant permission and relaunch"
-            status = .error
-            return
-        }
-
-        // Load WhisperKit model (downloads on first run)
+        // Load WhisperKit model first (downloads on first run)
         status = .loading
         await modelManager.loadModel()
 
@@ -57,6 +49,12 @@ class AppState: ObservableObject {
             return
         }
 
+        // Now try to start the hotkey monitor (needs Accessibility)
+        await startHotkeyMonitor()
+    }
+
+    /// Attempts to start the hotkey monitor. Can be called again after granting Accessibility permission.
+    func startHotkeyMonitor() async {
         // Set up hotkey callbacks
         hotkeyMonitor.onRecordingStart = { [weak self] in
             Task { @MainActor in
@@ -69,14 +67,15 @@ class AppState: ObservableObject {
             }
         }
 
-        guard hotkeyMonitor.start() else {
-            errorMessage = "Failed to start hotkey monitor — check Accessibility permission"
+        if hotkeyMonitor.start() {
+            status = .ready
+            errorMessage = nil
+        } else {
+            // CGEvent tap failed — likely missing Accessibility permission
+            PermissionChecker.promptAccessibility()
+            errorMessage = "Accessibility access required — grant permission then click Retry"
             status = .error
-            return
         }
-
-        status = .ready
-        errorMessage = nil
     }
 
     private func startRecording() {

@@ -28,6 +28,8 @@ final class AudioRecorder {
         let inputNode = engine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
 
+        print("AudioRecorder: input device format = \(inputFormat), sampleRate=\(inputFormat.sampleRate), channels=\(inputFormat.channelCount)")
+
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw AudioRecorderError.noInputAvailable
         }
@@ -55,6 +57,11 @@ final class AudioRecorder {
         bufferLock.lock()
         let result = audioBuffer
         bufferLock.unlock()
+        print("AudioRecorder: stopped, buffer has \(result.count) samples (\(Double(result.count) / 16000.0)s of audio)")
+        if !result.isEmpty {
+            let maxAmplitude = result.map { abs($0) }.max() ?? 0
+            print("AudioRecorder: max amplitude = \(maxAmplitude)")
+        }
         return result
     }
 

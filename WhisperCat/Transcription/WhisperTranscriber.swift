@@ -16,8 +16,28 @@ final class WhisperTranscriber {
         modelManager.isReady
     }
 
+    /// Whisper artifacts to filter out of transcription results.
+    private static let artifacts: Set<String> = [
+        "[BLANK_AUDIO]",
+        "[NO_SPEECH]",
+        "(blank audio)",
+        "(no speech)",
+        "[MUSIC]",
+        "[APPLAUSE]",
+        "[LAUGHTER]",
+    ]
+
     init(modelManager: ModelManager) {
         self.modelManager = modelManager
+    }
+
+    /// Removes Whisper hallucination artifacts like [BLANK_AUDIO] from text.
+    static func removeArtifacts(from text: String) -> String {
+        var cleaned = text
+        for artifact in artifacts {
+            cleaned = cleaned.replacingOccurrences(of: artifact, with: "")
+        }
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Transcribes a 16 kHz mono PCM float audio buffer into text.
@@ -45,7 +65,8 @@ final class WhisperTranscriber {
                             .map { $0.text }
                             .joined(separator: " ")
                             .trimmingCharacters(in: .whitespacesAndNewlines)
-                        return text.isEmpty ? nil : text
+                        let cleaned = Self.removeArtifacts(from: text)
+                        return cleaned.isEmpty ? nil : cleaned
                     } catch {
                         return nil as String?
                     }

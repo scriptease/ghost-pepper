@@ -1,7 +1,10 @@
 import SwiftUI
+import CoreAudio
 
 struct MenuBarView: View {
     @ObservedObject var appState: AppState
+    @State private var inputDevices: [AudioInputDevice] = []
+    @State private var selectedDeviceID: AudioDeviceID = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -17,6 +20,11 @@ struct MenuBarView: View {
                     Button("Open Accessibility Settings") {
                         PermissionChecker.openAccessibilitySettings()
                     }
+                    Button("Retry") {
+                        Task {
+                            await appState.startHotkeyMonitor()
+                        }
+                    }
                 }
                 if error.contains("Microphone") {
                     Button("Open Microphone Settings") {
@@ -27,11 +35,52 @@ struct MenuBarView: View {
 
             Divider()
 
+            Picker("Input Device", selection: $selectedDeviceID) {
+                ForEach(inputDevices) { device in
+                    Text(device.name).tag(device.id)
+                }
+            }
+            .onChange(of: selectedDeviceID) { _, newValue in
+                AudioDeviceManager.setDefaultInputDevice(newValue)
+            }
+
+            Divider()
+
+            Button("Restart WhisperCat") {
+                restartApp()
+            }
+
             Button("Quit WhisperCat") {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
         }
         .padding(8)
+        .onAppear {
+            refreshDevices()
+        }
+    }
+
+    private func refreshDevices() {
+        inputDevices = AudioDeviceManager.listInputDevices()
+        selectedDeviceID = AudioDeviceManager.defaultInputDeviceID() ?? 0
+    }
+
+    private func selectDevice(_ device: AudioInputDevice) {
+        if AudioDeviceManager.setDefaultInputDevice(device.id) {
+            selectedDeviceID = device.id
+        }
+    }
+
+    private func restartApp() {
+        let url = Bundle.main.bundleURL
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        task.arguments = ["-n", url.path]
+        try? task.run()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NSApplication.shared.terminate(nil)
+        }
     }
 }
