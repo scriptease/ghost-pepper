@@ -3,7 +3,6 @@ import CoreAudio
 
 struct MenuBarView: View {
     @ObservedObject var appState: AppState
-    let updaterController: UpdaterController
     @State private var inputDevices: [AudioInputDevice] = []
     @State private var selectedDeviceID: AudioDeviceID = 0
     @State private var showingPromptEditor = false
@@ -88,10 +87,6 @@ struct MenuBarView: View {
             }
 
             Divider()
-
-            Button("Check for Updates...") {
-                updaterController.checkForUpdates()
-            }
 
             Button("Restart Ghost Pepper") {
                 restartApp()
