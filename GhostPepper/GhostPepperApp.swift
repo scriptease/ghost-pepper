@@ -12,8 +12,7 @@ struct GhostPepperApp: App {
             Group {
                 switch appState.status {
                 case .recording:
-                    Image("MenuBarIcon")
-                        .renderingMode(.template)
+                    Image(systemName: "record.circle.fill")
                         .foregroundStyle(.red)
                 case .loading:
                     Image(systemName: "ellipsis.circle")

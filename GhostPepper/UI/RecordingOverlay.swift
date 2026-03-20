@@ -20,7 +20,7 @@ class RecordingOverlayController {
         }
 
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 280, height: 60),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 110),
             styleMask: [.nonactivatingPanel, .borderless],
             backing: .buffered,
             defer: false
@@ -104,7 +104,7 @@ struct OverlayPillView: View {
             .resizable()
             .interpolation(.high)
             .aspectRatio(contentMode: .fit)
-            .frame(height: 30)
+            .frame(height: 80)
             .onReceive(spriteTimer) { _ in
                 if showSprite {
                     spriteFrame = (spriteFrame + 1) % frameCount
