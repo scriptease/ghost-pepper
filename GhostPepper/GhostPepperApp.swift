@@ -3,18 +3,28 @@ import SwiftUI
 @main
 struct GhostPepperApp: App {
     @StateObject private var appState = AppState()
+    @State private var hasInitialized = false
 
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(appState: appState)
         } label: {
-            if appState.status == .ready || appState.status == .transcribing || appState.status == .cleaningUp {
-                Image("MenuBarIcon")
-                    .renderingMode(.template)
-            } else {
-                Image(systemName: menuBarIconName)
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(menuBarIconColor)
+            Group {
+                if appState.status == .ready || appState.status == .transcribing || appState.status == .cleaningUp {
+                    Image("MenuBarIcon")
+                        .renderingMode(.template)
+                } else {
+                    Image(systemName: menuBarIconName)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(menuBarIconColor)
+                }
+            }
+            .onAppear {
+                guard !hasInitialized else { return }
+                hasInitialized = true
+                Task {
+                    await appState.initialize()
+                }
             }
         }
     }

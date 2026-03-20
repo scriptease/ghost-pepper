@@ -44,11 +44,6 @@ class AppState: ObservableObject {
                 self?.objectWillChange.send()
             }
         }
-
-        // Start initialization immediately on launch
-        Task { @MainActor in
-            await self.initialize()
-        }
     }
 
     func initialize() async {
