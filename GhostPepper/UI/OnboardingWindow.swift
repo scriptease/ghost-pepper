@@ -330,8 +330,15 @@ struct SetupStep: View {
                 }
 
                 if modelManager.state == .loading {
-                    EmojiProgressBar()
-                        .padding(.horizontal, 4)
+                    VStack(spacing: 6) {
+                        EmojiProgressBar()
+                        VStack(alignment: .leading, spacing: 3) {
+                            ModelStageRow(name: "WhisperKit (speech-to-text)", size: "~500 MB", isDone: false, isActive: true)
+                            ModelStageRow(name: "Qwen 1.5B (fast cleanup)", size: "~1 GB", isDone: false, isActive: false)
+                            ModelStageRow(name: "Qwen 3B (full cleanup)", size: "~2 GB", isDone: false, isActive: false)
+                        }
+                    }
+                    .padding(.horizontal, 4)
                 }
             }
             .padding(.horizontal, 24)
@@ -730,6 +737,39 @@ struct DoneStep: View {
             .tint(.orange)
             .padding(.horizontal, 40)
             .padding(.bottom, 24)
+        }
+    }
+}
+
+struct ModelStageRow: View {
+    let name: String
+    let size: String
+    let isDone: Bool
+    let isActive: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if isDone {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption2)
+            } else if isActive {
+                ProgressView()
+                    .controlSize(.mini)
+                    .scaleEffect(0.6)
+                    .frame(width: 12, height: 12)
+            } else {
+                Image(systemName: "circle")
+                    .foregroundStyle(.quaternary)
+                    .font(.caption2)
+            }
+            Text(name)
+                .font(.caption2)
+                .foregroundStyle(isActive ? .primary : .secondary)
+            Spacer()
+            Text(size)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
     }
 }
