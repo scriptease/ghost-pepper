@@ -206,7 +206,14 @@ class AppState: ObservableObject {
             overlay.dismiss()
             textPaster.paste(text: finalText)
         } else {
+            // Transcription returned nil — likely blank audio
+            silentRecordingCount += 1
             overlay.dismiss()
+            if silentRecordingCount >= 1 {
+                showInputCheckAlert()
+            }
+            status = .ready
+            return
         }
 
         status = .ready
