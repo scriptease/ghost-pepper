@@ -169,7 +169,7 @@ final class TextPasterTests: XCTestCase {
         pasteboard.releaseGlobally()
     }
 
-    func testPasteLeavesTranscriptOnClipboardWhenFocusedInputIsUnavailable() {
+    func testPasteLeavesTranscriptOnClipboardWhenAccessibilityUnavailable() {
         let pasteboard = NSPasteboard.withUniqueName()
         pasteboard.clearContents()
         pasteboard.setString("original content", forType: .string)
@@ -177,11 +177,7 @@ final class TextPasterTests: XCTestCase {
         var scheduledActions = 0
         let paster = TextPaster(
             pasteboard: pasteboard,
-            canPasteIntoFocusedElement: { false },
-            prepareCommandV: {
-                XCTFail("prepareCommandV should not be called when no focused input is available")
-                return nil
-            },
+            prepareCommandV: { return nil }, // Simulates missing Accessibility permission
             schedule: { _, _ in
                 scheduledActions += 1
             }
@@ -205,7 +201,6 @@ final class TextPasterTests: XCTestCase {
         var postedCommandV = 0
         let paster = TextPaster(
             pasteboard: pasteboard,
-            canPasteIntoFocusedElement: { true },
             prepareCommandV: {
                 { postedCommandV += 1 }
             },
@@ -221,15 +216,20 @@ final class TextPasterTests: XCTestCase {
         XCTAssertEqual(postedCommandV, 0)
         XCTAssertEqual(scheduledActions.count, 1)
 
-        let postPasteAction = scheduledActions.removeFirst()
-        postPasteAction()
+        // Execute pre-keystroke action: fires Cmd+V and schedules two async callbacks
+        let preKeystrokeAction = scheduledActions.removeFirst()
+        preKeystrokeAction()
 
         XCTAssertEqual(postedCommandV, 1)
-        XCTAssertEqual(scheduledActions.count, 1)
+        // Two callbacks scheduled: paste-session capture and clipboard restore
+        XCTAssertEqual(scheduledActions.count, 2)
         XCTAssertEqual(pasteboard.string(forType: .string), "new content")
 
-        let restoreClipboardAction = scheduledActions.removeFirst()
-        restoreClipboardAction()
+        // Execute paste-session capture (first callback)
+        scheduledActions.removeFirst()()
+
+        // Execute clipboard restore (second callback, fires at 450ms)
+        scheduledActions.removeFirst()()
 
         XCTAssertEqual(pasteboard.string(forType: .string), "original content")
 
@@ -246,7 +246,6 @@ final class TextPasterTests: XCTestCase {
         let expectation = expectation(description: "paste session captured")
         let paster = TextPaster(
             pasteboard: pasteboard,
-            canPasteIntoFocusedElement: { true },
             prepareCommandV: { {} },
             pasteSessionProvider: { text, date in
             PasteSession(
@@ -274,11 +273,13 @@ final class TextPasterTests: XCTestCase {
 
         currentSnapshot = "after paste"
 
-        let postPasteAction = scheduledActions.removeFirst()
-        postPasteAction()
+        // Execute pre-keystroke action: fires Cmd+V, schedules session capture + restore
+        let preKeystrokeAction = scheduledActions.removeFirst()
+        preKeystrokeAction()
 
-        XCTAssertEqual(scheduledActions.count, 1)
+        XCTAssertEqual(scheduledActions.count, 2)
 
+        // Execute paste-session capture (first callback, fires at postPasteSessionDelay)
         let captureSessionAction = scheduledActions.removeFirst()
         captureSessionAction()
 

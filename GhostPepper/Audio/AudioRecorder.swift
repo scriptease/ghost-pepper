@@ -133,8 +133,8 @@ final class AudioRecorder {
             throw AudioRecorderError.noInputAvailable
         }
 
-        // Roughly 100ms of audio at the actual HW rate.
-        let bufferSize: AVAudioFrameCount = AVAudioFrameCount(hwFormat.sampleRate * 0.1)
+        // Roughly 50ms of audio at the actual HW rate (matches OpenWhispr's ~50ms PCM chunk cadence).
+        let bufferSize: AVAudioFrameCount = AVAudioFrameCount(hwFormat.sampleRate * 0.05)
 
         cachedConverter = nil
         cachedConverterSourceFormat = nil
@@ -171,8 +171,8 @@ final class AudioRecorder {
     /// Stops capturing audio and returns the recorded buffer.
     /// Waits briefly to flush any remaining audio in the engine's buffer.
     func stopRecording() async -> [Float] {
-        // Wait 200ms to let the last audio buffers flush through
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        // Wait 100ms to let the last audio buffers flush through.
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()

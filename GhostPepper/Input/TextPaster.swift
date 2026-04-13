@@ -59,10 +59,16 @@ final class TextPaster {
     // MARK: - Timing Constants
 
     /// Delay after writing text to clipboard before simulating Cmd+V.
-    static let preKeystrokeDelay: TimeInterval = 0.05
+    /// Matches OpenWhispr's 15ms fast-paste path for low perceived latency.
+    static let preKeystrokeDelay: TimeInterval = 0.015
 
-    /// Delay after simulating Cmd+V before restoring the original clipboard.
-    static let postKeystrokeDelay: TimeInterval = 0.1
+    /// Delay after simulating Cmd+V before capturing the paste session for learning.
+    static let postPasteSessionDelay: TimeInterval = 0.05
+
+    /// Delay before restoring the original clipboard. Longer than the session delay so
+    /// the receiving app has time to consume the clipboard before we swap it back.
+    /// Matches OpenWhispr's 450ms async restore on macOS.
+    static let clipboardRestoreDelay: TimeInterval = 0.45
 
     // MARK: - Virtual Key Codes
 
@@ -73,13 +79,11 @@ final class TextPaster {
 
     private let pasteSessionProvider: PasteSessionProvider
     private let pasteboard: NSPasteboard
-    private let canPasteIntoFocusedElement: () -> Bool
     private let prepareCommandV: () -> (() -> Void)?
     private let schedule: PasteScheduler
 
     init(
         pasteboard: NSPasteboard = .general,
-        canPasteIntoFocusedElement: @escaping () -> Bool = { TextPaster.defaultCanPasteIntoFocusedElement() },
         prepareCommandV: @escaping () -> (() -> Void)? = { TextPaster.defaultCommandVPasteAction() },
         pasteSessionProvider: @escaping PasteSessionProvider = { text, date in
             FocusedElementLocator().capturePasteSession(for: text, at: date)
@@ -89,7 +93,6 @@ final class TextPaster {
         }
     ) {
         self.pasteboard = pasteboard
-        self.canPasteIntoFocusedElement = canPasteIntoFocusedElement
         self.prepareCommandV = prepareCommandV
         self.pasteSessionProvider = pasteSessionProvider
         self.schedule = schedule
@@ -145,8 +148,13 @@ final class TextPaster {
     /// Flow:
     /// 1. Save current clipboard
     /// 2. Write text to clipboard
-    /// 3. After a short delay, simulate Cmd+V
-    /// 4. After another delay, restore the original clipboard
+    /// 3. After a short delay (15ms), simulate Cmd+V — no AX preflight, always attempt paste
+    /// 4. After 50ms, capture paste session for post-paste learning
+    /// 5. After 450ms, restore the original clipboard asynchronously (non-blocking)
+    ///
+    /// Returns `.copiedToClipboard` only if Accessibility permission is unavailable
+    /// (CGEvent creation fails). Otherwise always returns `.pasted` and lets Cmd+V
+    /// land wherever the system focus is, matching OpenWhispr's approach.
     ///
     /// - Parameter text: The text to paste.
     func paste(text: String) -> PasteResult {
@@ -156,7 +164,7 @@ final class TextPaster {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
-        guard canPasteIntoFocusedElement() || Self.frontmostAppHasPasteMenuItem(), let postCommandV = prepareCommandV() else {
+        guard let postCommandV = prepareCommandV() else {
             onPasteEnd?()
             return .copiedToClipboard
         }
@@ -164,29 +172,25 @@ final class TextPaster {
         schedule(Self.preKeystrokeDelay) { [weak self] in
             postCommandV()
 
-            self?.schedule(Self.postKeystrokeDelay) { [weak self] in
+            self?.schedule(Self.postPasteSessionDelay) { [weak self] in
                 guard let self else { return }
-
                 if let pasteSession = self.pasteSessionProvider(text, Date()) {
                     self.onPaste?(pasteSession)
                 }
-
-                if let savedState = savedState {
-                    self.restoreClipboard(savedState)
-                }
-
                 self.onPasteEnd?()
+            }
+
+            self?.schedule(Self.clipboardRestoreDelay) { [weak self] in
+                if let savedState = savedState {
+                    self?.restoreClipboard(savedState)
+                }
             }
         }
 
         return .pasted
     }
 
-    // MARK: - Accessibility Preflight
-
-    private static func defaultCanPasteIntoFocusedElement() -> Bool {
-        FocusedElementLocator().canPasteIntoFocusedElement()
-    }
+    // MARK: - Accessibility Utilities (used by tests and settings diagnostics)
 
     static func containsLikelyPasteTarget(
         startingAt snapshot: AccessibilitySnapshot,
